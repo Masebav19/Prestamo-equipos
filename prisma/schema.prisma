@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model devicelist {
+  Id               Int    @id @default(autoincrement())
+  codigo           String @db.MediumText
+  Tipo             String @db.VarChar(20)
+  Marca            String @db.VarChar(30)
+  Modelo           String @db.VarChar(100)
+  Especificaciones String @db.VarChar(30)
+  Cantidad         Int    @default(0)
+}
+
+model prestamo_equipos {
+  Prestamos_Id        Int       @id @default(autoincrement())
+  Nombre              String    @db.VarChar(25)
+  email               String    @db.VarChar(30)
+  Modelo              String    @db.VarChar(100)
+  Direccion_IP        String    @db.VarChar(15)@default("Ninguno")
+  Estado              String    @db.VarChar(30)
+  Estado_prestamo     String    @db.VarChar(30)
+  Fecha               DateTime  @default(now())
+  Observacion         String    @db.VarChar(500) @default("")
+  ModulosExpansion    String    @db.VarChar(500) @default("")
+  DocenteResponsable  String    @db.VarChar(100) @default("")
+  deviceID            Int       @unique
+}
+
+model mantenimiento {
+  id           Int      @id @default(autoincrement())
+  Nombre       String   @db.VarChar(30)
+  email        String   @db.VarChar(30)
+  Modelo       String   @db.VarChar(100)
+  Direccion_IP String   @db.VarChar(15)
+  Estado       String   @db.VarChar(500)
+  Actividades  String   @db.Text
+  Fecha_Inicio DateTime @default(now())
+  Fecha_Fin    DateTime
+}
+
+model labuser {
+  Id           Int    @id @default(autoincrement())
+  Lab_User     String @db.VarChar(20)
+  Lab_Password String @db.VarChar(20)
+}
