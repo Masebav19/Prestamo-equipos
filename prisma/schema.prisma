@@ -19,7 +19,7 @@ model devicelist {
 
 model prestamo_equipos {
   Prestamos_Id        Int       @id @default(autoincrement())
-  Nombre              String    @db.VarChar(25)
+  Nombre              String    @db.VarChar(100)
   email               String    @db.VarChar(30)
   Modelo              String    @db.VarChar(100)
   Direccion_IP        String    @db.VarChar(15)@default("Ninguno")

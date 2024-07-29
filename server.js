@@ -4,7 +4,7 @@ import env from './controllers/env.js'
 import bcript from 'bcrypt'
 import cors from 'cors'
 import {create_let_device,create_return_device,read_user_credencials,
-    read_available_devices,read_loaned_devices
+    read_available_devices,read_loaned_devices,create_maintance
 } from './controllers/MysqlClient.js'
 import { Send_email } from './controllers/emailClient.js'
 
@@ -53,7 +53,7 @@ server.post('/api/prestamo',(req,res)=>{
 })
 //GET para el envío de datos de los dispositivos que están libres
 server.get('/api/prestamo',(req,res)=>{
-    read_available_devices().then(devices=>{
+    read_available_devices(true).then(devices=>{
         const DevicesNames = devices.map((device)=>{
             return {
                 Id: device.Id,
@@ -96,7 +96,7 @@ server.post('/api/devolucion',(req,res)=>{
 //GET para envío de los dispositivos prestados
 
 server.get('/api/devolucion',(req,res)=>{
-    read_loaned_devices().then((loanedDevices)=>{
+    read_loaned_devices('Prestado').then((loanedDevices)=>{
         const filterDevices = loanedDevices.map((loanedDevice)=>{
             return{
                 email: loanedDevice.email,
@@ -108,12 +108,73 @@ server.get('/api/devolucion',(req,res)=>{
         return res.json({Response: "Bad Data"}).status(406)
     })
 })
-// server.post('api/detalle',(req,res)=>{
+//********************DETALLE DE LOS ELEMENTOS PRESTADOS Y DEVUELTOS**************/
+//login
+server.post('/api/detalle',async(req,res)=>{
+    const data = req.body;
+    if (!(data?.User)) return res.json({Login: "NotAllowed"}).status(406)
+    const credencials = await read_user_credencials();
+    const LogIn = credencials.find((credencial)=>{
+        //return credencial.Lab_User===data.User && bcript.compareSync(credencial.Lab_Password,data.Password)
+        return credencial.Lab_User===data.User && credencial.Lab_Password===data.Password
+    })
+    return LogIn ?  res.json(data).status(200): res.json({Login: "NotAllowed"}).status(400)
+})
+//Envío de los equipos al cliente
+server.get('/api/detalle/:type-:user',(req,res)=>{
+    const {type,user} = req.params;
+    if(user !== "Admin") return res.status(400).json()
+    if (type === 'Prestado'){
+        read_loaned_devices("Prestado").then(elements =>{
+            return res.json(elements).status(200)
+        })
+        .catch(()=>{
+            return res.status(406).json()
+        })
+    }else if (type === 'Devuelto'){
+        read_loaned_devices("Devuelto").then(elements =>{
+            return res.json(elements).status(200)
+        })
+        .catch(()=>{
+            return res.status(406).json()
+        })
+    }else{
+        read_loaned_devices().then(elements =>{
+            return res.json(elements).status(200)
+        })
+        .catch(()=>{
+            return res.status(406).json()
+        })  
+    }
+})
 
-// })
-// server.post('api/mantenimiento',(req,res)=>{
+/****************INGRESO DE MANTENIMIENTO DE EQUIPOS********/
+server.get('/api/mantenimiento',(req,res)=>{
+    read_available_devices().then(elements=>{
+        return res.status(200).json(elements)
+    }).catch(()=>{
+        return res.status(400).json()  
+    })
+})
 
-// })
+server.post('/api/mantenimiento/:action',(req,res)=>{
+    const {action} = req.params;
+    const data = req.body;
+    if (action === 'new'){
+        create_maintance(data).then(()=>{
+            res.json(data).status(200)
+        }).catch(()=>{
+            res.json({State: "Bad Data"}).status(400)
+        })
+    }else{
+        create_maintance(data,action).then((device)=>{
+            res.json(device).status(200)
+        }).catch(()=>{
+            res.json({State: "Bad Data"}).status(400)
+        })
+    }
+
+})
 server.listen(venv.SERVER_PORT,()=>{
     console.log(`Servidor escuchando en el puerto ${venv.SERVER_PORT}`)
     console.log(`Direccion IP: ${os.networkInterfaces().Ethernet[3].address}:${venv.SERVER_PORT}`)
