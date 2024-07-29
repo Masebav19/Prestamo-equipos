@@ -29,7 +29,7 @@ model prestamo_equipos {
   Observacion         String    @db.VarChar(500) @default("")
   ModulosExpansion    String    @db.VarChar(500) @default("")
   DocenteResponsable  String    @db.VarChar(100) @default("")
-  deviceID            Int       @unique
+  deviceID            Int       
 }
 
 model mantenimiento {

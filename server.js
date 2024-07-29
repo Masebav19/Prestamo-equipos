@@ -38,7 +38,7 @@ server.post('/api/prestamo',(req,res)=>{
                 Correo: ${data.email}
                 
                 Laboratorio de redes Industriales
-                Deparatmaneto de automatización y control
+                Departamento de automatización y control
                 Escuela Politécnica Nacional
             `,
             for: data.email
@@ -81,7 +81,7 @@ server.post('/api/devolucion',(req,res)=>{
                 Correo: ${data.email}
                 
                 Laboratorio de redes Industriales
-                Deparatmaneto de automatización y control
+                Departamento de automatización y control
                 Escuela Politécnica Nacional
             `,
             for: `${data.email};${data.DocenteResponsable}`
