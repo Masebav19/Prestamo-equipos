@@ -59,29 +59,91 @@ async function read_user_credencials(){
     return credencials;
 }
 
-async function read_available_devices(){
-    const availableDevices = await Prisma.devicelist.findMany({where:{
-        Cantidad:{gt:0}
-    }});
+async function read_available_devices(loaned = false){
+    let Devices
+    if (loaned){
+        Devices = await Prisma.devicelist.findMany({where:{
+            Cantidad:{gt:0}
+        }});
+    }else{
+        Devices = await Prisma.devicelist.findMany(); 
+    }
+    
     Prisma.$disconnect
-    return availableDevices
+    return Devices
 }
 
-async function read_loaned_devices(){
-    const loanedDevices = await Prisma.prestamo_equipos.findMany({where:{
-        Estado_prestamo: "Prestado"
-    }})
+async function read_loaned_devices(state=""){
+    let loanedDevices=[]
+    if(state===""){
+        loanedDevices = await Prisma.prestamo_equipos.findMany()    
+    }else{
+        loanedDevices = await Prisma.prestamo_equipos.findMany({where:{
+            Estado_prestamo: state
+        }})
+    }
     Prisma.$disconnect
     return loanedDevices
+    
 }
 
+async function create_maintance(data,state="new"){
+    const data_device = await Prisma.devicelist.findFirst({where:{
+        Modelo: data.Modelo,
+        Especificaciones: data.Especificaciones
+    }})
+    if (state==="new") {
+        await Prisma.mantenimiento.create({data:{
+            Nombre: data.Nombre,
+            email: data.email,
+            Modelo: data.Modelo,
+            Direccion_IP: data.Especificaciones,
+            Estado : "Sin definir",
+            Actividades: data.Actividades,
+            Fecha_Inicio: new Date(),
+            Fecha_Fin: new Date()
+        }})
+        await Prisma.devicelist.update({where:{
+            Id: data_device.Id
+        },data:{
+            Cantidad:{decrement:1} 
+        }})
+        Prisma.$disconnect
+        return
+    }else{
+        const device = await Prisma.mantenimiento.findFirst({where:{
+            Modelo: data.Modelo,
+            Direccion_IP: data.Especificaciones,
+            Estado: "Sin definir"
+        }})
+        const newDevice = await Prisma.mantenimiento.update({where:{
+            id: device.id
+        },data:{
+            Estado: data.Estado,
+            Fecha_Fin: new Date(),
+        }})
+        await Prisma.devicelist.update({where:{
+            Id: data_device.Id
+        },data:{
+            Cantidad:{
+                increment:1
+            }
+        }})
+        Prisma.$disconnect
+        return newDevice
+    }
+
+}
+
+
 // async function delete_let_device(){
-//     await Prisma.prestamo_equipos.delete({where:{
-//         Prestamos_Id:4
+//     await Prisma.mantenimiento.delete({where:{
+//         id:6
 //     }})
 //     await Prisma.$disconnect
 // }
 
 // delete_let_device().then(console.log("Archivo borrado"))
 
-export {create_let_device,create_return_device,read_user_credencials,read_available_devices,read_loaned_devices}
+export {create_let_device,create_return_device,read_user_credencials,
+    read_available_devices,read_loaned_devices,create_maintance}
