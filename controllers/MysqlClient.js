@@ -113,7 +113,7 @@ async function create_maintance(data,state="new"){
     }else{
         const device = await Prisma.mantenimiento.findFirst({where:{
             Modelo: data.Modelo,
-            Direccion_IP: data.Especificaciones,
+            email: data.email,
             Estado: "Sin definir"
         }})
         const newDevice = await Prisma.mantenimiento.update({where:{
@@ -135,6 +135,10 @@ async function create_maintance(data,state="new"){
 
 }
 
+async function read_maintance(){
+    const data =await Prisma.mantenimiento.findMany()
+    return data
+}
 
 // async function delete_let_device(){
 //     await Prisma.mantenimiento.delete({where:{
@@ -146,4 +150,4 @@ async function create_maintance(data,state="new"){
 // delete_let_device().then(console.log("Archivo borrado"))
 
 export {create_let_device,create_return_device,read_user_credencials,
-    read_available_devices,read_loaned_devices,create_maintance}
+    read_available_devices,read_loaned_devices,create_maintance,read_maintance}

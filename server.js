@@ -4,7 +4,7 @@ import env from './controllers/env.js'
 import bcript from 'bcrypt'
 import cors from 'cors'
 import {create_let_device,create_return_device,read_user_credencials,
-    read_available_devices,read_loaned_devices,create_maintance
+    read_available_devices,read_loaned_devices,create_maintance,read_maintance
 } from './controllers/MysqlClient.js'
 import { Send_email } from './controllers/emailClient.js'
 
@@ -115,8 +115,8 @@ server.post('/api/detalle',async(req,res)=>{
     if (!(data?.User)) return res.json({Login: "NotAllowed"}).status(406)
     const credencials = await read_user_credencials();
     const LogIn = credencials.find((credencial)=>{
-        //return credencial.Lab_User===data.User && bcript.compareSync(credencial.Lab_Password,data.Password)
-        return credencial.Lab_User===data.User && credencial.Lab_Password===data.Password
+        return credencial.Lab_User===data.User && bcript.compareSync(credencial.Lab_Password,data.Password)
+       
     })
     return LogIn ?  res.json(data).status(200): res.json({Login: "NotAllowed"}).status(400)
 })
@@ -149,8 +149,16 @@ server.get('/api/detalle/:type-:user',(req,res)=>{
 })
 
 /****************INGRESO DE MANTENIMIENTO DE EQUIPOS********/
-server.get('/api/mantenimiento',(req,res)=>{
+server.get('/api/newmantenimiento',(req,res)=>{
     read_available_devices().then(elements=>{
+        return res.status(200).json(elements)
+    }).catch(()=>{
+        return res.status(400).json()  
+    })
+})
+
+server.get('/api/endmantenimiento',(req,res)=>{
+    read_maintance().then(elements=>{
         return res.status(200).json(elements)
     }).catch(()=>{
         return res.status(400).json()  
@@ -162,13 +170,46 @@ server.post('/api/mantenimiento/:action',(req,res)=>{
     const data = req.body;
     if (action === 'new'){
         create_maintance(data).then(()=>{
-            res.json(data).status(200)
+            const emailData={
+                asunto: `Mantenimietno del Dispositivo: ${data.Nombre}`,
+                msg: `
+                    Se ha registrado el inicio de mantenimiento del sisguiente dispositivo:
+                    Modelo: ${data.Modelo}
+                    Nombre responsable: ${data.Nombre}
+                    Correo: ${data.email}
+                    
+                    Laboratorio de redes Industriales
+                    Departamento de automatización y control
+                    Escuela Politécnica Nacional
+                `,
+                for: data.email
+            }
+            Send_email(emailData.msg,emailData.asunto,emailData.for).finally(()=>{
+                return res.json(data).status(200)
+            })
+            
         }).catch(()=>{
             res.json({State: "Bad Data"}).status(400)
         })
     }else{
-        create_maintance(data,action).then((device)=>{
-            res.json(device).status(200)
+        create_maintance(data,action).then((data)=>{
+            const emailData={
+                asunto: `Mantenimietno del Dispositivo: ${data.Nombre}`,
+                msg: `
+                    Se ha registrado la finalización de mantenimiento del sisguiente dispositivo:
+                    Modelo: ${data.Modelo}
+                    Nombre responsable: ${data.Nombre}
+                    Correo: ${data.email}
+                    
+                    Laboratorio de redes Industriales
+                    Departamento de automatización y control
+                    Escuela Politécnica Nacional
+                `,
+                for: data.email
+            }
+            Send_email(emailData.msg,emailData.asunto,emailData.for).finally(()=>{
+                return res.json(data).status(200)
+            })
         }).catch(()=>{
             res.json({State: "Bad Data"}).status(400)
         })
